@@ -358,9 +358,10 @@ class API3CRobot:
         self.logger.info("🚀 Inicializando API 3C Robot...")
         
         # Carrega configurações
-        self.manager_token = os.getenv('MANAGER_TOKEN')
-        self.cron_schedule = os.getenv('CRON_SCHEDULE', '0 2 * * *')  # Padrão: 02:00 todos os dias
-        self.per_page = int(os.getenv('PER_PAGE', 100))
+        self.manager_token = os.getenv('MANAGER_TOKEN',"")
+        self.cron_schedule = os.getenv('CRON_SCHEDULE')  # Padrão: 02:00 todos os dias
+        self.per_page = int(os.getenv('PER_PAGE',"0"))
+        self.campaign_ids = os.getenv('CAMPAIGN_IDS', '0') # Carrega os IDs das campanhas
         
         self.db_config = {
             'server': os.getenv('DB_SERVER', '192.168.11.200,1434'),
@@ -378,11 +379,12 @@ class API3CRobot:
         self.logger.info(f"⚙️ Configurações carregadas:")
         self.logger.info(f"   📅 CRON Schedule: {self.cron_schedule}")
         self.logger.info(f"   📄 Registros por página: {self.per_page}")
+        self.logger.info(f"   📊 IDs de Campanha: {self.campaign_ids}")
         self.logger.info(f"   🗄️ Database Server: {self.db_config['server']}")
         self.logger.info(f"   📊 Database: {self.db_config['database']}")
         self.logger.info(f"   👤 Username: {self.db_config['username']}")
         
-        self.base_url = os.getenv('BASE_URL', 'http://app.3c.fluxoti.com.br/api/v1/calls')
+        self.base_url = os.getenv('BASE_URL')
         self.logger.info(f"   🔗 Base URL: {self.base_url}")
         
         self.db_manager = DatabaseManager(self.db_config, self.logger)
@@ -457,7 +459,7 @@ class API3CRobot:
         finally:
             cursor.close()
     
-    def fetch_api_data(self, start_date: str, end_date: str, campaign_ids: str = "5,6"):
+    def fetch_api_data(self, start_date: str, end_date: str, campaign_ids: str):
         """
         Consulta a API de forma paginada e 'yields' (gera) os dados de cada página.
         Isso evita carregar todos os dados na memória de uma vez.
@@ -702,7 +704,7 @@ class API3CRobot:
         finally:
             cursor.close()
     
-    def process_data(self, start_date: str, end_date: str, campaign_ids: str = "5,6") -> Dict[str, int]:
+    def process_data(self, start_date: str, end_date: str, campaign_ids: str) -> Dict[str, int]:
         """
         Processo principal: consulta API e salva no banco
         Returns: dict com estatísticas da execução
@@ -801,9 +803,9 @@ class API3CRobot:
         self.logger.info(f"📅 EXECUTANDO SINCRONIZAÇÃO DIÁRIA - {yesterday.strftime('%Y-%m-%d')}")
         self.logger.info("="*80)
         
-        return self.process_data(start_date, end_date)
+        return self.process_data(start_date, end_date, self.campaign_ids)
     
-    def run_period_sync(self, start_date: str, end_date: str, campaign_ids: str = "5,6") -> Dict[str, int]:
+    def run_period_sync(self, start_date: str, end_date: str, campaign_ids: str) -> Dict[str, int]:
         """Executa sincronização para um período específico"""
         self.logger.info("="*80)
         self.logger.info(f"📅 EXECUTANDO SINCRONIZAÇÃO POR PERÍODO")
@@ -891,14 +893,12 @@ class API3CRobot:
         # Verifica se há parâmetros específicos nas variáveis de ambiente
         start_date = os.getenv('MANUAL_START_DATE')
         end_date = os.getenv('MANUAL_END_DATE')
-        campaign_ids = os.getenv('MANUAL_CAMPAIGN_IDS', '5,6')
-        
         if start_date and end_date:
             self.logger.info(f"📅 Parâmetros manuais detectados:")
             self.logger.info(f"   🗓️ Data início: {start_date}")
             self.logger.info(f"   🗓️ Data fim: {end_date}")
-            self.logger.info(f"   📊 Campanhas: {campaign_ids}")
-            return self.run_period_sync(start_date, end_date, campaign_ids)
+            self.logger.info(f"   📊 Campanhas: {self.campaign_ids}")
+            return self.run_period_sync(start_date, end_date, self.campaign_ids)
         else:
             self.logger.info("📅 Executando sincronização do dia anterior...")
             return self.run_daily_sync()
