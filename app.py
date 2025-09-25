@@ -266,7 +266,7 @@ class DatabaseManager:
             
             cursor.execute(create_logs_table)
             
-            self.connection.commit()
+            self.connection.commit() # type: ignore
             self.logger.info("✅ Todas as tabelas foram verificadas/criadas com sucesso!")
             
         except Exception as e:
@@ -420,20 +420,20 @@ class API3CRobot:
             
             # Obtém o ID inserido
             cursor.execute("SELECT @@IDENTITY")
-            log_id = cursor.fetchone()[0]
+            log_id = cursor.fetchone()[0] # type: ignore
             
-            self.db_manager.connection.commit()
+            self.db_manager.connection.commit() # type: ignore
             self.logger.info(f"✅ Execução registrada com ID: {log_id}")
             return log_id
             
         except Exception as e:
             self.logger.error(f"❌ Erro ao registrar início da execução: {e}")
-            return None
+            return None # type: ignore
         finally:
             cursor.close()
     
     def log_execution_end(self, log_id: int, total_records: int, successful_records: int, 
-                         failed_records: int, execution_time: int, status: str, error_message: str = None):
+                         failed_records: int, execution_time: int, status: str, error_message: str = None): # type: ignore
         """Atualiza log de execução com resultados finais"""
         if log_id is None:
             return
@@ -451,7 +451,7 @@ class API3CRobot:
             cursor.execute(update_sql, (total_records, successful_records, failed_records,
                                       execution_time, status, error_message, log_id))
             
-            self.db_manager.connection.commit()
+            self.db_manager.connection.commit() # type: ignore
             self.logger.info(f"✅ Log de execução {log_id} atualizado com sucesso")
             
         except Exception as e:
@@ -682,7 +682,7 @@ class API3CRobot:
                 
                 cursor.execute(insert_mailing_sql, mailing_values)
             
-            self.db_manager.connection.commit()
+            self.db_manager.connection.commit() # type: ignore
             self.logger.debug(f"✅ Chamada {call_id} salva com sucesso")
             return True, f"Chamada {call_id} salva com sucesso"
             
@@ -699,7 +699,7 @@ class API3CRobot:
             msg = f"Erro inesperado ao salvar chamada {call_id}: {e}"
             self.logger.error(f"❌ {msg}")
             self.logger.error(f"📝 Traceback: {traceback.format_exc()}")
-            self.db_manager.connection.rollback()
+            self.db_manager.connection.rollback() # type: ignore
             return False, msg
         finally:
             cursor.close()
@@ -852,7 +852,7 @@ class API3CRobot:
         self.logger.info("⏰ Configurando agendamento de execução...")
         
         try:
-            schedule_format = self.parse_cron_schedule(self.cron_schedule)
+            schedule_format = self.parse_cron_schedule(self.cron_schedule) # type: ignore
             
             if schedule_format.startswith("daily_at_"):
                 time_part = schedule_format.replace("daily_at_", "")
